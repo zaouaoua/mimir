@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+Dockerfile
+.dockerignore
+.env
+.env.*
+dev.db
+prisma/dev.db
+uploads
+/dist
+.git
+.github

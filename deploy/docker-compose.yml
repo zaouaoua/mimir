@@ -1,0 +1,25 @@
+services:
+  api:
+    image: ghcr.io/zaouaoua/mimir:main
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: file:/data/dev.db
+    env_file:
+      - ./.env
+    volumes:
+      - api-data:/data
+      - api-uploads:/app/uploads
+    expose:
+      - "3000"
+
+  web:
+    image: ghcr.io/zaouaoua/baldure:main
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
+volumes:
+  api-data:
+  api-uploads:
