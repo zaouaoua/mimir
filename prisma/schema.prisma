@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Quiz {
+  id         Int        @id @default(autoincrement())
+  title      String
+  category   Int?       @default(0)
+  difficulty String?    @default("any")
+  userId     Int?
+  public     Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  games      Game[]
+  rooms      Room[]
+  questions  Question[]
+  user       User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Question {
+  id            Int      @id @default(autoincrement())
+  quizId        Int
+  type         String
+  text          String
+  trueFalse     Boolean
+  correctAnswer String
+  falseAnswer1  String?
+  falseAnswer2  String?
+  falseAnswer3  String?
+  answers       Answer[]
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
+
+model Game {
+  id             String   @id
+  userId         Int?
+  quizId         Int
+  questionCursor Int
+  createdAt      DateTime @default(now())
+  answers        Answer[]
+  mode           String?
+  difficulty     String?
+  user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz           Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+}
+
+model Answer {
+  questionId Int
+  gameId     String
+  correct    Boolean
+  game       Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, gameId])
+}
+
+model User {
+  id          Int    @id @default(autoincrement())
+  email       String? @unique
+  emailVerified Boolean @default(false)
+  emailVerificationTokenHash String?
+  emailVerificationTokenExpiresAt DateTime?
+  passwordResetTokenHash String?
+  passwordResetTokenExpiresAt DateTime?
+  password    String
+  userName    String @unique
+  games       Game[]
+  quizs       Quiz[]
+  rooms       Room[]
+  roomPlayers RoomPlayer[]
+}
+
+model Room {
+  id               String   @id
+  quizId           Int
+  creatorId        Int
+  launched         Boolean  @default(false)
+  gameMode         String   @default("scrum")
+  questionCursor   Int
+  createdAt        DateTime @default(now())
+  playerCount      Int      @default(1)
+  difficulty       String   @default("any")
+  roomPlayers      RoomPlayer[]
+  teams            Team[]
+  quiz             Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  creator          User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+}
+
+model RoomPlayer {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  roomId         String
+  teamId         Int?
+  score          Int      @default(0)
+  answered       Boolean  @default(false)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room           Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  team           Team?    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roomId])
+}
+
+model Team {
+  id        Int        @id @default(autoincrement())
+  name      String
+  roomId    String
+  players   RoomPlayer[]
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}
