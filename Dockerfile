@@ -1,32 +1,20 @@
 # syntax=docker/dockerfile:1
 
-FROM node:20-alpine AS deps
+FROM node:20-alpine
 WORKDIR /app
+
+# Default SQLite location inside container (overridable via compose/env)
+ENV DATABASE_URL=file:/data/dev.db
 
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Prisma client needs schema at generate time
-COPY prisma ./prisma
-COPY prisma.config.ts ./prisma.config.ts
-RUN npx prisma generate
-
-FROM node:20-alpine AS build
-WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+RUN npx prisma generate
 RUN npm run build
 
-FROM node:20-alpine AS runner
-WORKDIR /app
 ENV NODE_ENV=production
-
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/prisma.config.ts ./prisma.config.ts
-COPY --from=build /app/package.json ./package.json
 
 RUN mkdir -p /data /app/uploads
 
